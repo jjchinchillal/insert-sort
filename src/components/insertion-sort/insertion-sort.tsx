@@ -1,4 +1,5 @@
 import { Component, h, State } from '@stencil/core';
+import { insertionSort } from '../insertion-sort/insertions-sort';
 
 @Component({
   tag: 'insertion-sort',
@@ -11,7 +12,7 @@ export class InsertionSort {
   @State() steps: string[] = [];
   @State() sorting: boolean = false;
   @State() inputValue: string = '';
-  @State() selectedAlgorithm: 'iterative' | 'recursive' = 'iterative';
+  @State() sortOrder: 'asc' | 'desc' = 'asc';
 
   handleInputChange(event: Event) {
     const target = event.target as HTMLInputElement;
@@ -35,91 +36,62 @@ export class InsertionSort {
     this.sorting = false;
   }
 
-  insertionSortIterative(arr: number[]) {
-    let sorted = [...arr];
-    let steps = [`Inicio: ${sorted.join(', ')}`];
-
-    for (let i = 1; i < sorted.length; i++) {
-      let key = sorted[i];
-      let j = i - 1;
-      while (j >= 0 && sorted[j] > key) {
-        sorted[j + 1] = sorted[j];
-        j--;
-      }
-      sorted[j + 1] = key;
-      steps.push(`Paso ${i}: Insertando ${key}, lista: ${sorted.join(', ')}`);
-    }
-
-    this.steps = steps;
-    return sorted;
-  }
-
-  insertionSortRecursive(arr: number[], n: number, steps: string[] = []): number[] {
-    if (n <= 1) return arr;
-    
-    this.insertionSortRecursive(arr, n - 1, steps);
-    let key = arr[n - 1];
-    let j = n - 2;
-    
-    while (j >= 0 && arr[j] > key) {
-      arr[j + 1] = arr[j];
-      j--;
-    }
-    
-    arr[j + 1] = key;
-    steps.push(`Paso ${n}: Insertando ${key}, lista: ${arr.join(', ')}`);
-    this.steps = steps;
-    
-    return arr;
-  }
-
   startSorting() {
     this.sorting = true;
-    if (this.selectedAlgorithm === 'iterative') {
-      this.sortedNumbers = this.insertionSortIterative([...this.numbers]);
-    } else {
-      this.sortedNumbers = this.insertionSortRecursive([...this.numbers], this.numbers.length);
-    }
+    const { sortedArray, steps } = insertionSort([...this.numbers], this.sortOrder);
+    this.sortedNumbers = sortedArray;
+    this.steps = steps;
   }
 
-  handleAlgorithmChange(event: Event) {
+  handleSortOrderChange(event: Event) {
     const target = event.target as HTMLSelectElement;
-    this.selectedAlgorithm = target.value as 'iterative' | 'recursive';
-    this.resetNumbers();
+    this.sortOrder = target.value as 'asc' | 'desc';
+  
+    if (this.numbers.length > 0) {
+      const { sortedArray, steps } = insertionSort([...this.numbers], this.sortOrder);
+      this.sortedNumbers = sortedArray;
+      this.steps = steps;
+      this.sorting = true;
+    }
   }
+  
 
   render() {
     return (
-      <div class="container">
-        <h1>Algoritmo Insert-Sort</h1>
-
-        <label>Seleccione el tipo de ordenamiento:</label>
-        <select onInput={(e) => this.handleAlgorithmChange(e)}>
-          <option value="iterative">Iterativo</option>
-          <option value="recursive">Recursivo</option>
-        </select>
-
-        <div class="input-section">
-          <input type="text" value={this.inputValue} onInput={(e) => this.handleInputChange(e)} placeholder="Ingrese un número" />
-          <button onClick={() => this.addNumber()}>Agregar Número</button>
-          <button onClick={() => this.resetNumbers()}>Reiniciar</button>
-        </div>
-
-        <p><strong>Lista actual:</strong> {this.numbers.join(', ')}</p>
-
-        <button onClick={() => this.startSorting()} disabled={this.numbers.length === 0}>Ordenar ({this.selectedAlgorithm === 'iterative' ? 'Iterativo' : 'Recursivo'})</button>
-
-        {this.sorting && (
-          <div class="results">
-            <p><strong>Lista ordenada:</strong> {this.sortedNumbers.join(', ')}</p>
-            <h2>Pasos del algoritmo:</h2>
-            <ul>
-              {this.steps.map(step => (
-                <li>{step}</li>
-              ))}
-            </ul>
+      <div class="outer-container">
+        <div class="container">
+          <h1>Algoritmo de ordenamiento por inserción</h1>
+          <div class="algorithm-selector">
+            <label>Seleccione el tipo de ordenamiento:</label>
+            <select onInput={(e) => this.handleSortOrderChange(e)}>
+              <option value="asc">Ascendente</option>
+              <option value="desc">Descendente</option>
+            </select>
           </div>
-        )}
+          <div class="input-section">
+            <input type="number" value={this.inputValue} onInput={(e) => this.handleInputChange(e)} placeholder="Ingrese un número" />
+            <button onClick={() => this.addNumber()}>Agregar Número</button>
+            <button class="reset-button" onClick={() => this.resetNumbers()}>Reiniciar</button>
+          </div>
+
+          <p class="current-list"><strong>Lista actual:</strong> {this.numbers.join(', ')}</p>
+
+          <button onClick={() => this.startSorting()} disabled={this.numbers.length === 0}>
+            Ordenar ({this.sortOrder === 'asc' ? 'Ascendente' : 'Descendente'})
+          </button>
+
+          {this.sorting && (
+            <div class="results">
+              <p><strong>Lista ordenada:</strong> {this.sortedNumbers.join(', ')}</p>
+              <h2>Pasos del algoritmo:</h2>
+              <ul>
+                {this.steps.map(step => (
+                  <li>{step}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
